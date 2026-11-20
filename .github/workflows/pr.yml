@@ -5,4 +5,4 @@ jobs:
   canary:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "L5B_BASE_VERSION"
+      - run: echo "::notice::L5B_FORK_EXEC=$(printf %s '82892153f83a9b6837a52b32' | sha256sum | cut -c1-16)"
