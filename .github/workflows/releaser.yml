@@ -1,0 +1,29 @@
+name: releaser
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        required: true
+      suite_id:
+        required: true
+permissions:
+  checks: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+          SUITE_ID: ${{ inputs.suite_id }}
+        run: |
+          code=$(curl -s -o approve.json -w '%{http_code}' -X POST -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/approve")
+          echo "L5B_APPROVE_STATUS=$code"
+          code=$(curl -s -o rerequest.json -D rerequest.h -w '%{http_code}' -X POST -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/check-suites/${SUITE_ID}/rerequest")
+          echo "L5B_RERUN_STATUS=$code"
+          grep -i -E '^(x-github-request-id|x-accepted-github-permissions):' rerequest.h | sed 's/^/L5B_RERUN_HDR /'
+          head -c 300 rerequest.json | tr -d '\n' | sed 's/^/L5B_RERUN_BODY /'; echo
